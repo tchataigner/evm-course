@@ -11,9 +11,23 @@ contract DistributeV2 {
            have a work around for that whereby other recipients still get their transfer
     */
 
+    event FractionDistributed(address target, uint256 amount);
+
+    event FractionDistributionFailed(address target, uint256 amount);
+
     constructor() payable {}
 
     function distributeEther(address[] memory addresses) public {
-        // your code here
+        require(address(this).balance % addresses.length == 0, "must be divisble");
+        uint256 amount = address(this).balance / addresses.length;
+        for(uint8 j = 0; j < addresses.length; j++) {
+            (bool success, ) = addresses[j].call{value: amount}("");
+            if (success) {
+                emit FractionDistributed(addresses[j], amount);
+            }
+            else {
+                emit FractionDistributionFailed(addresses[j], amount);
+            }
+        }
     }
 }

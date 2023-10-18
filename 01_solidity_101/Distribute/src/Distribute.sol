@@ -9,9 +9,19 @@ contract Distribute {
         2. Write your code in the `distributeEther` function.
     */
 
+
+    event FractionDistributed(address target, uint256 amount);
+
     constructor() payable {}
 
     function distributeEther(address[] memory addresses) public {
-        // your code here
+        require(address(this).balance % addresses.length == 0, "must be divisble");
+        uint256 amount = address(this).balance / addresses.length;
+        for(uint8 j = 0; j < addresses.length; j++) {
+            (bool ok,) = addresses[j].call{value: amount}("");
+            if (ok) {
+                emit FractionDistributed(addresses[j], amount);
+            }
+        }
     }
 }

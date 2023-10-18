@@ -2,6 +2,10 @@
 pragma solidity ^0.8.13;
 
 contract OneWeekLockup {
+
+    mapping(address => uint256) balances;
+    mapping(address => uint256) depositTimes;
+
     /**
      * In this exercise you are expected to create functions that let users deposit ether
      * Users can also withdraw their ether (not more than their deposit) but should only be able to do a week after their last deposit
@@ -14,14 +18,17 @@ contract OneWeekLockup {
      */
 
     function balanceOf(address user) public view returns (uint256) {
-        // return the user's balance in the contract
+        return balances[user];
     }
 
     function depositEther() external payable {
-        /// add code here
+        balances[msg.sender] += msg.value;
+        depositTimes[msg.sender] = block.timestamp;
     }
 
     function withdrawEther(uint256 amount) external {
-        /// add code here
+        require(block.timestamp >= (depositTimes[msg.sender] + 7 days) && balances[msg.sender] >= amount);
+        (bool ok, ) = msg.sender.call{value: balances[msg.sender]}("");
+        require(ok, "Tx failed");
     }
 }

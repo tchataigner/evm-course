@@ -2,6 +2,11 @@
 pragma solidity ^0.8.13;
 
 contract IdiotBettingGame {
+
+    uint256 private maxEther;
+    address private candidate;
+    uint256 private endTime;
+
     /*
         This exercise assumes you know how block.timestamp works.
         - Whoever deposits the most ether into a contract wins all the ether if no-one 
@@ -14,10 +19,16 @@ contract IdiotBettingGame {
     */
 
     function bet() public payable {
-        // your code here
+        if (msg.value > maxEther) {
+            maxEther = msg.value;
+            candidate = msg.sender;
+            endTime = block.timestamp + 1 hours;
+        }
     }
 
     function claimPrize() public {
-        // your code here
+        require(block.timestamp > endTime && msg.sender == candidate);
+        (bool ok,) = candidate.call{value: address(this).balance}("");
+        require(ok, "TX failed");
     }
 }

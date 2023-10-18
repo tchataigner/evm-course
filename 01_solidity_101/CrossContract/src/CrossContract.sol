@@ -9,8 +9,17 @@ contract CrossContract {
     function getLowerPrice(
         address _priceOracle1,
         address _priceOracle2
-    ) external view returns (uint256) {
-        // your code here
+    ) external returns (uint256) {
+       (bool ok1, bytes memory result1) = _priceOracle1.call(abi.encodeWithSignature("price()"));
+       uint256 price1 = getPrice(ok1, result1);
+       (bool ok2, bytes memory result2) = _priceOracle2.call(abi.encodeWithSignature("price()"));
+       uint256 price2 = getPrice(ok2, result2);
+       return price1 > price2 ? price2 : price1;
+    }
+
+    function getPrice(bool ok, bytes memory result) private pure returns (uint256) {
+        require(ok, "failed");
+        return abi.decode(result, (uint256));
     }
 }
 

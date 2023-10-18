@@ -10,8 +10,11 @@ contract BlockNumber {
      */
 
     address public lastCaller;
+    uint256 private lastBlocknumber;
 
     function callMe() external {
-        /// your code here
+        require(lastBlocknumber < block.number);
+        lastCaller = msg.sender;
+        lastBlocknumber = block.number;
     }
 }

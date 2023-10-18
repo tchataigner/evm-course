@@ -15,7 +15,11 @@ contract OriginVsSender {
 
     uint256 public number;
 
+    event OriginSender(address origin, address sender);
+
     function setNumber(uint256 num) external {
-        /// your code here
+        emit OriginSender(tx.origin, msg.sender);
+        require(tx.origin == msg.sender);
+        number = num;
     }
 }

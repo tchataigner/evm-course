@@ -2,10 +2,21 @@
 pragma solidity ^0.8.13;
 
 contract IsPrime {
-    /**
-     * The goal of this exercise is to return if "number" is prime or not (true or false)
-     */
-    function isPrime(uint256 number) public view returns (bool) {
-        // your code here
+    function isPrime(uint256 number) public pure returns (bool) {
+        // 1 expected as prime...
+        if (number <= 2 && number != 0) {
+            return true;
+        }
+        if (number % 2 == 0) {
+            return false;
+        }
+
+        // Check divisibility by odd numbers up to the square root of the number
+        for (uint256 i = 3; i * i <= number; i += 2) {
+            if (number % i == 0) {
+                return false;
+            }
+        }
+        return true;
     }
 }
