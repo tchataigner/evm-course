@@ -1,6 +1,7 @@
 # Solidity Exercises
 
-This is a set of exercises accompanies the RareSkills [learn solidity](https://rareskills.io/learn-solidity) tutorial so you can learn Solidity by doing bite-sized exercises. It's intended for experienced programmers who want to get the the point quickly and immediately practice what they learn.
+This exercises come from the [Rareskills repository](https://github.com/RareSkills/Solidity-Exercises), but we fixed some test files
+and remove some non-relevant.
 
 ## Installation
 
