@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.15;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
@@ -16,12 +16,6 @@ contract TokenBox is Context, ERC1155, AccessControl {
         uint256 indexed amount
     );
 
-    // Event emitted when minter set redemption statement
-    event RedemptionStatementSet(
-        address indexed minter,
-        uint256 indexed tokenId,
-        string indexed cid
-    );
 
     /*****************************************************************
      * Token utilities
@@ -34,8 +28,6 @@ contract TokenBox is Context, ERC1155, AccessControl {
     mapping(uint256 => address) private _minter;
     // Amount of tokens redeemed by an account of an _id
     mapping(uint256 => mapping(address => uint256)) private _redeemed;
-    // [IN PROGRESS] Redemption validated by auditors
-    mapping(uint256 => mapping(address => bool)) private _validatedRedemptions;
     // Supply of tokens available for an id
     mapping(uint256 => uint256) private _supply;
     // Total amount of tokens redeemed for an _id
@@ -48,14 +40,11 @@ contract TokenBox is Context, ERC1155, AccessControl {
      *****************************************************************/
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant REDEEMER_ROLE = keccak256("REDEEMER_ROLE");
-    // [IN PROGRESS]
-    bytes32 public constant AUDITOR_ROLE = keccak256("AUDITOR_ROLE");
 
     constructor() ERC1155("") {
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _grantRole(MINTER_ROLE, _msgSender());
         _grantRole(REDEEMER_ROLE, _msgSender());
-        _grantRole(AUDITOR_ROLE, _msgSender());
     }
 
     /**
@@ -93,10 +82,6 @@ contract TokenBox is Context, ERC1155, AccessControl {
      * - The URI of the token will be set to the passed in uri
      * - The next token id will be incremented
      */
-    // Is there a possibility for broker to send RECs and directly set them as redeemed ?
-    // Or should the SP be the only to redeem his own tokens ?
-    // Or both ?
-    // TODO Change the function name
     function mintAndAllocate(
         string memory tokenUri,
         uint256 amount,
@@ -155,6 +140,11 @@ contract TokenBox is Context, ERC1155, AccessControl {
     }
 
     function _redeem(address redeemer, uint256 id, uint256 amount) internal {
+        require(
+            hasRole(REDEEMER_ROLE, redeemer),
+            "Sender must have MINTER_ROLE to mint new tokens"
+        );
+
         // Burn tokens
         _burn(redeemer, id, amount);
 
@@ -164,55 +154,7 @@ contract TokenBox is Context, ERC1155, AccessControl {
         // Increase supply _redeemed
         _redeemedSupply[id] += amount;
 
-        // [IN PROGRESS] If redemption was validated, set it as not validated anymore
-        if (_validatedRedemptions[id][redeemer]) {
-            _validatedRedemptions[id][redeemer] = false;
-        }
-
         emit Redeem(redeemer, id, amount);
-    }
-
-    /**
-     * [IN PROGRESS] Function that allows an account with AUDITOR_ROLE to validate a redemption.
-     *
-     * @param account address: account to validate the redemption for.
-     * @param id uint256: identifier of the token that has been redeemed.
-     *
-     */
-    function validateRedemption(address account, uint256 id) public {
-        require(
-            hasRole(AUDITOR_ROLE, _msgSender()),
-            "Sender must have AUDITOR_ROLE to validate redeemed"
-        );
-        _validatedRedemptions[id][account] = true;
-    }
-
-    /**
-     * Function that allows setting the Redemption statement URI for a token id,
-     * only callable by the minter of the token id and only when all tokens of the id have been redeemed
-     *
-     * @param id uint256: identifier of the token for which the redemption statement should be set.
-     * @param redemptionStatement string memory: redemption statement URI to set.
-     *
-     */
-    // Can redemption statement be set multiple time ? Cna it be set by someone else than the minter ?
-    // Need to iterate on that. As of now broker/minter is the one generating the redemption statement. In the future it'd
-    // be ideal if the information could come from the smart contract. Many redemption statements can be set for one NFTs
-    // but created at once.
-    function setRedemptionStatement(uint256 id, string memory redemptionStatement) public {
-        require(_msgSender() == _minter[id], "Sender should be the RECs' minter");
-        require(
-            _supply[id] == _redeemedSupply[id],
-            "Supply should be redeemed before setting redemption statement"
-        );
-
-        bytes memory tempEmptyStringTest = bytes(_redemptionStatementURI[id]); // Uses memory
-
-        require(tempEmptyStringTest.length == 0, "Redemption statement can not be updated");
-
-        _redemptionStatementURI[id] = redemptionStatement;
-
-        emit RedemptionStatementSet(_msgSender(), id, redemptionStatement);
     }
 
     /**
@@ -255,17 +197,6 @@ contract TokenBox is Context, ERC1155, AccessControl {
     }
 
     /**
-     * Function that returns whether a redemption for a specific account for a given token id was validated or not.
-     *
-     * @param account address: account whose redemption validation status is being queried
-     * @param id uint256: identifier of the token
-     * @return bool: true if the redemption was validated, false otherwise
-     */
-    function isRedemptionValidated(address account, uint256 id) public view returns (bool) {
-        return _validatedRedemptions[id][account];
-    }
-
-    /**
      * Function that returns the supply of a specific token id
      *
      * @param id uint256: identifier of the token
@@ -283,15 +214,5 @@ contract TokenBox is Context, ERC1155, AccessControl {
      */
     function redeemedSupplyOf(uint256 id) public view returns (uint256) {
         return _redeemedSupply[id];
-    }
-
-    /**
-     * Function that returns the Redemption statement URI for a specific token id
-     *
-     * @param id uint256: identifier of the token
-     * @return string memory: URI of redemption statement
-     */
-    function redemptionStatementOf(uint256 id) public view returns (string memory) {
-        return _redemptionStatementURI[id];
     }
 }
