@@ -9,6 +9,16 @@ contract Deployer {
     */
 
     function deployContract() public view returns (address) {
-        return address(this);
+        bytes memory bytecode = bytes("");
+
+        assembly {
+            let size := mload(bytecode)
+            let memStart := add(bytecode, 0x20)
+            let newContractAddress := create(0, memStart, size)
+            if iszero(extcodesize(newContractAddress)) {
+                revert(0, 0)  // deployment failed
+            }
+        }
+        return newContractAddress;
     }
 }
