@@ -43,3 +43,18 @@ For Getters in our contract, here are the following information interesting to u
 
 We advise to use the [Context](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Context.sol)
 contract from Open Zeppelin to get used to it, as it useful in a context where metatransaction might be done on our contract.
+
+## Deployment
+
+First, start the Anvil network:
+
+```shell
+anvil
+```
+
+Get a Private Key from the proposed list, then run:
+```bash
+ forge create --rpc-url http://localhost:8545 --private-key <private-key> src/TokenBox.sol:TokenBox
+```
+
+You will be able to get your contract address from there.
